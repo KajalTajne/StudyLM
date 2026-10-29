@@ -1,0 +1,44 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: studylm-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - studylm-net
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: studylm-backend
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    depends_on:
+      - qdrant
+    networks:
+      - studylm-net
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: studylm-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - studylm-net
+
+volumes:
+  qdrant_storage:
+    driver: local
+
+networks:
+  studylm-net:
+    external: true
